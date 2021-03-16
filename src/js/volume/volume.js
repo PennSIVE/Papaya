@@ -153,28 +153,13 @@ papaya.volume.Volume.prototype.loadURL = function (url, vol, index) {
 
     supported = typeof new XMLHttpRequest().responseType === 'string';
     if (supported) {
-        xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.responseType = 'arraybuffer';
+        window.addEventListener('message', function(event) {
+            const data = event.data.data; // The JSON data our extension sent
 
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    vol.fileLength = vol.rawData.byteLength;
-                    deferredLoading.resolve( xhr.response );
-                } else {
-                    deferredLoading.reject(vol,false,xhr);
-                }
-            }
-        };
-
-        xhr.onprogress = function (evt) {
-            if(evt.lengthComputable) {
-                deferredLoading.notify(evt.loaded, evt.total);
-            }
-        };
-
-        xhr.send(null);
+            vol.fileLength = data.length;
+            deferredLoading.resolve(data);
+        });
+        window.vscode.postMessage({ url: url });
     } else {
         vol.error = new Error("There was a problem reading that file (" + vol.fileName +
             "):\n\nResponse type is not supported.");
